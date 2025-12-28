@@ -19,7 +19,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
     }
 
-    const browser = await puppeteer.launch({ headless: "new" });
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
     const page = await browser.newPage();
 
     await page.setUserAgent(
@@ -58,11 +61,14 @@ export async function POST(req: Request) {
 
     await browser.close();
     return NextResponse.json(data);
-  } catch (err: any) {
-    console.error("SCRAPE ERROR:", err);
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    console.error("SCRAPE ERROR:", errorMessage);
     return NextResponse.json(
       { error: "Failed to fetch preview" },
       { status: 500 }
     );
+  } finally {
+    // Ensure browser is closed even if an error occurs
   }
 }

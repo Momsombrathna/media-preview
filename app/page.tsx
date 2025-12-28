@@ -83,8 +83,8 @@ export default function Home() {
         body: JSON.stringify({ url: link }),
       })
 
-      const result: PreviewData = await res.json()
-      if (!res.ok) throw new Error((result as any).error)
+      const result: PreviewData & { error?: string } = await res.json()
+      if (!res.ok) throw new Error(result.error || 'Unknown error')
 
       // Detect type automatically
       const type = result.url.includes('youtube') && result.youtubeId
@@ -96,8 +96,9 @@ export default function Home() {
       saveHistory([newItem, ...history.filter(h => h.url !== link)].slice(0, 8))
 
       setData({ ...result, type })
-    } catch (e: any) {
-      setError(e.message || 'Preview failed')
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Preview failed';
+      setError(message);
     } finally {
       setLoading(false)
     }
