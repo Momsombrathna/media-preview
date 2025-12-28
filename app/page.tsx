@@ -106,13 +106,12 @@ export default function Home() {
 
   const Username = ({ urlLink }: { urlLink: string }) => {
     const username = urlLink.split('/').filter(Boolean).pop()
-    return <span>{username}</span>
+    return <span className="font-semibold">{username}</span>
   }
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 px-4 py-10 text-gray-900 dark:text-gray-100">
       <div className="max-w-3xl mx-auto">
-
         <h1 className="text-3xl font-bold mb-2">Multi-platform Link Preview</h1>
         <p className="text-gray-600 dark:text-gray-400 mb-6">
           Facebook • Instagram • TikTok • YouTube
@@ -161,7 +160,7 @@ export default function Home() {
               </div>
             ))}
 
-            <button onClick={clearHistory} className="px-3 py-2 rounded-full bg-red-100 dark:bg-red-900 text-red-600 text-sm">
+            <button onClick={clearHistory} className="px-3 py-2 rounded-full bg-red-100 dark:bg-red-900 text-white text-sm">
               Clear All
             </button>
           </div>
@@ -177,46 +176,66 @@ export default function Home() {
         {/* PREVIEW */}
         {data && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden relative">
-            {data.image && (
-              <div className="relative">
-                <img src={data.image} className="w-full h-64 object-cover" referrerPolicy="no-referrer" />
-                {/* Play button for post/story */}
-                {data.type === 'post' && !data.blocked && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <FaPlay className="text-white text-6xl drop-shadow-lg animate-pulse" />
+            {data.type === 'profile' ? (
+              <div className="flex flex-col items-center p-6">
+                <div className="relative">
+                  <img
+                    src={data.image || '/placeholder-profile.png'}
+                    className="w-28 h-28 rounded-full object-cover border-4 border-white dark:border-gray-800 shadow"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="absolute -bottom-2 right-2">{getPlatformIcon(detectPlatform(data.url))}</div>
+                </div>
+                <h2 className="mt-4 text-xl font-bold"><Username urlLink={data.url} /></h2>
+                {data.title && <p className="text-gray-500 dark:text-gray-400 text-sm">{data.title}</p>}
+                <div className="flex gap-4 mt-3 text-sm text-gray-600 dark:text-gray-300">
+                  <span><strong>123</strong> posts</span>
+                  <span><strong>456k</strong> followers</span>
+                  <span><strong>789</strong> following</span>
+                </div>
+                <a href={data.url} target="_blank" className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-full text-sm hover:bg-blue-700">
+                  View Profile
+                </a>
+              </div>
+            ) : (
+              <>
+                {data.image && (
+                  <div className="relative">
+                    <img src={data.image} className="w-full h-64 object-cover" referrerPolicy="no-referrer" />
+                    {data.type === 'post' && !data.blocked && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <FaPlay className="text-white text-6xl drop-shadow-lg animate-pulse" />
+                      </div>
+                    )}
                   </div>
                 )}
-              </div>
+                {data.youtubeId && (
+                  <iframe
+                    className="w-full h-64"
+                    src={`https://www.youtube.com/embed/${data.youtubeId}`}
+                    allow="autoplay; encrypted-media"
+                    allowFullScreen
+                  />
+                )}
+                <div className="p-6">
+                  <h2 className="text-xl font-bold mb-2">{data.title}</h2>
+                  {data.description && (
+                    <p className="text-gray-600 dark:text-gray-300 mb-3">{data.description}</p>
+                  )}
+                  {data.blocked && (
+                    <p className="text-sm text-orange-500">⚠️ Content restricted or private</p>
+                  )}
+                  {data.type && (
+                    <p className="text-xs text-gray-400 mb-1">
+                      {data.type.toUpperCase()} • {detectPlatform(data.url).toUpperCase()}
+                    </p>
+                  )}
+                  <a href={data.url} target="_blank" className="text-blue-600 text-sm underline">Open on platform</a>
+                </div>
+              </>
             )}
-
-            {/* YouTube embed */}
-            {data.youtubeId && (
-              <iframe
-                className="w-full h-64"
-                src={`https://www.youtube.com/embed/${data.youtubeId}`}
-                allow="autoplay; encrypted-media"
-                allowFullScreen
-              />
-            )}
-
-            <div className="p-6">
-              <h2 className="text-xl font-bold mb-2">{data.title}</h2>
-              {data.description && (
-                <p className="text-gray-600 dark:text-gray-300 mb-3">{data.description}</p>
-              )}
-              {data.blocked && (
-                <p className="text-sm text-orange-500">⚠️ Content restricted or private</p>
-              )}
-              {data.type && (
-                <p className="text-xs text-gray-400 mb-1">
-                  {data.type.toUpperCase()} • {detectPlatform(data.url).toUpperCase()}
-                </p>
-              )}
-              <a href={data.url} target="_blank" className="text-blue-600 text-sm underline">Open on platform</a>
-            </div>
           </div>
         )}
-
       </div>
     </div>
   )
