@@ -20,8 +20,7 @@ export async function POST(req: Request) {
     }
 
     const browser = await puppeteer.launch({
-      // @ts-expect-error - Puppeteer types may not include "new" yet
-      headless: "new",
+      headless: true,
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
     const page = await browser.newPage();
