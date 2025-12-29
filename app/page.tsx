@@ -11,6 +11,9 @@ interface PreviewData {
   blocked?: boolean
   type?: 'post' | 'story' | 'profile'
   youtubeId?: string
+  followers?: string
+  following?: string
+  postsCount?: string
 }
 
 interface HistoryItem {
@@ -83,22 +86,21 @@ export default function Home() {
         body: JSON.stringify({ url: link }),
       })
 
-      const result: PreviewData & { error?: string } = await res.json()
+      const result: { items: PreviewData[]; error?: string } = await res.json()
       if (!res.ok) throw new Error(result.error || 'Unknown error')
 
-      // Detect type automatically
-      const type = result.url.includes('youtube') && result.youtubeId
-        ? 'post'
-        : result.url.includes('story') ? 'story' : 'profile'
+      if (result.items.length === 0) throw new Error("No data found")
 
+      const profile = result.items[0]
+      const type = profile.type || 'profile'
       const platform = detectPlatform(link)
-      const newItem: HistoryItem = { url: link, platform, image: result.image, type }
+      const newItem: HistoryItem = { url: link, platform, image: profile.image, type }
       saveHistory([newItem, ...history.filter(h => h.url !== link)].slice(0, 8))
 
-      setData({ ...result, type })
+      setData({ ...profile, type })
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Preview failed';
-      setError(message);
+      const message = e instanceof Error ? e.message : 'Preview failed'
+      setError(message)
     } finally {
       setLoading(false)
     }
@@ -126,7 +128,6 @@ export default function Home() {
             className="flex-1 px-4 py-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
             disabled={loading}
           />
-
           <button
             onClick={() => handlePreview()}
             disabled={loading}
@@ -153,13 +154,11 @@ export default function Home() {
                   )}
                   <span className="text-sm font-medium truncate max-w-[120px]"><Username urlLink={h.url} /></span>
                 </button>
-
                 <button onClick={() => removeHistoryItem(h.url)} className="text-red-500 hover:text-red-700 text-sm font-bold" title="Remove">
                   ✖
                 </button>
               </div>
             ))}
-
             <button onClick={clearHistory} className="px-3 py-2 rounded-full bg-red-100 dark:bg-red-900 text-white text-sm">
               Clear All
             </button>
@@ -189,9 +188,9 @@ export default function Home() {
                 <h2 className="mt-4 text-xl font-bold"><Username urlLink={data.url} /></h2>
                 {data.title && <p className="text-gray-500 dark:text-gray-400 text-sm">{data.title}</p>}
                 <div className="flex gap-4 mt-3 text-sm text-gray-600 dark:text-gray-300">
-                  <span><strong>123</strong> posts</span>
-                  <span><strong>456k</strong> followers</span>
-                  <span><strong>789</strong> following</span>
+                  {data.postsCount && <span><strong>{data.postsCount}</strong> posts</span>}
+                  {data.followers && <span><strong>{data.followers}</strong> followers</span>}
+                  {data.following && <span><strong>{data.following}</strong> following</span>}
                 </div>
                 <a href={data.url} target="_blank" className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-full text-sm hover:bg-blue-700">
                   View Profile
@@ -219,18 +218,23 @@ export default function Home() {
                 )}
                 <div className="p-6">
                   <h2 className="text-xl font-bold mb-2">{data.title}</h2>
-                  {data.description && (
-                    <p className="text-gray-600 dark:text-gray-300 mb-3">{data.description}</p>
+                  <p className="text-gray-600 dark:text-gray-300 mb-3">{data.description}</p>
+                  {(data.followers || data.following || data.postsCount) && (
+                    <div className="flex gap-4 mb-3 text-sm text-gray-500 dark:text-gray-400">
+                      {data.followers && <span>Followers: {data.followers}</span>}
+                      {data.following && <span>Following: {data.following}</span>}
+                      {data.postsCount && <span>Posts: {data.postsCount}</span>}
+                    </div>
                   )}
-                  {data.blocked && (
-                    <p className="text-sm text-orange-500">⚠️ Content restricted or private</p>
-                  )}
+                  {data.blocked && <p className="text-sm text-orange-500">⚠️ Content restricted or private</p>}
                   {data.type && (
-                    <p className="text-xs text-gray-400 mb-1">
+                    <p className="text-xs text-gray-400 mb-3">
                       {data.type.toUpperCase()} • {detectPlatform(data.url).toUpperCase()}
                     </p>
                   )}
-                  <a href={data.url} target="_blank" className="text-blue-600 text-sm underline">Open on platform</a>
+                  <a href={data.url} target="_blank" className="text-blue-600 dark:text-blue-400 text-sm underline hover:underline">
+                    Open on platform
+                  </a>
                 </div>
               </>
             )}
